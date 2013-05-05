@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *   http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -18,8 +18,11 @@
 #include "stdlib.h"
 #include "string.h"
 #include "MQTTAsync.h"
+#ifdef __VMS
+#include <unistd.h>
+#endif
 
-#define ADDRESS     "tcp://swtest.hursley.ibm.com:1883"
+#define ADDRESS     "tcp://16.156.32.82:1883"
 #define CLIENTID    "ExampleClientPub"
 #define TOPIC       "MQTT Examples"
 #define PAYLOAD     "Hello World!"
@@ -71,7 +74,7 @@ void onSend(void* context, MQTTAsync_successData* response)
 	if ((rc = MQTTAsync_disconnect(client, &opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start sendMessage, return code %d\n", rc);
-		exit(-1);	
+		exit(-1);
 	}
 }
 
@@ -91,7 +94,7 @@ void onConnect(void* context, MQTTAsync_successData* response)
 	int rc;
 
 	printf("Successful connection\n");
-	
+
 	opts.onSuccess = onSend;
 	opts.context = client;
 
@@ -104,7 +107,7 @@ void onConnect(void* context, MQTTAsync_successData* response)
 	if ((rc = MQTTAsync_sendMessage(client, TOPIC, &pubmsg, &opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start sendMessage, return code %d\n", rc);
- 		exit(-1);	
+ 		exit(-1);
 	}
 }
 
@@ -123,13 +126,15 @@ int main(int argc, char* argv[])
 
 	conn_opts.keepAliveInterval = 20;
 	conn_opts.cleansession = 1;
+	conn_opts.username = "guest";
+	conn_opts.password = "guest";
 	conn_opts.onSuccess = onConnect;
 	conn_opts.onFailure = onConnectFailure;
 	conn_opts.context = client;
 	if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start connect, return code %d\n", rc);
-		exit(-1);	
+		exit(-1);
 	}
 
 	printf("Waiting for publication of %s\n"
@@ -141,8 +146,7 @@ int main(int argc, char* argv[])
 		#else
 			usleep(10000L);
 		#endif
-
 	MQTTAsync_destroy(&client);
  	return rc;
 }
-  
+

@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *   http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -15,24 +15,24 @@
  *******************************************************************************/
 
 /*
- 
+
  stdout subscriber for the asynchronous client
- 
+
  compulsory parameters:
- 
+
   --topic topic to subscribe to
- 
+
  defaulted parameters:
- 
+
 	--host localhost
 	--port 1883
 	--qos 2
 	--delimiter \n
 	--clientid stdout_subscriber
-	
+
 	--userid none
 	--password none
- 
+
 */
 
 #include "MQTTAsync.h"
@@ -41,7 +41,9 @@
 #include <stdio.h>
 #include <signal.h>
 #include <memory.h>
-
+#ifdef __VMS
+#include <unistd.h>
+#endif
 
 #if defined(WIN32)
 #include <Windows.h>
@@ -101,7 +103,7 @@ void usage()
 void getopts(int argc, char** argv)
 {
 	int count = 2;
-	
+
 	while (count < argc)
 	{
 		if (strcmp(argv[count], "--qos") == 0)
@@ -184,7 +186,7 @@ void getopts(int argc, char** argv)
 		}
 		count++;
 	}
-	
+
 }
 
 
@@ -252,8 +254,13 @@ void onConnect(void* context, MQTTAsync_successData* response)
 	MQTTAsync_message pubmsg = MQTTAsync_message_initializer;
 	int rc;
 
+#ifdef __VMS
+	if (opts.showtopics)
+		printf("Subscribing to topic %s (client ID = %d, QoS = %d)\n", topic, opts.clientid, opts.qos);
+#else
 	if (opts.showtopics)
 		printf("Subscribing to topic %s\n", topic, opts.clientid, opts.qos);
+#endif
 
 	ropts.onSuccess = onSubscribe;
 	ropts.onFailure = onSubscribeFailure;
@@ -261,7 +268,7 @@ void onConnect(void* context, MQTTAsync_successData* response)
 	if ((rc = MQTTAsync_subscribe(client, topic, opts.qos, &ropts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start subscribe, return code %d\n", rc);
-    finished = 1;	
+    finished = 1;
 	}
 }
 
@@ -273,10 +280,10 @@ int main(int argc, char** argv)
 	MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
 	int rc = 0;
 	char url[100];
-	
+
 	if (argc < 2)
 		usage();
-	
+
 	topic = argv[1];
 
   if (strchr(topic, '#') || strchr(topic, '+'))
@@ -284,7 +291,7 @@ int main(int argc, char** argv)
   if (opts.showtopics)
 		printf("topic is %s\n", topic);
 
-	getopts(argc, argv);	
+	getopts(argc, argv);
 	sprintf(url, "%s:%s", opts.host, opts.port);
 
 	rc = MQTTAsync_create(&client, url, opts.clientid, MQTTCLIENT_PERSISTENCE_NONE, NULL);
@@ -304,7 +311,7 @@ int main(int argc, char** argv)
 	if ((rc = MQTTAsync_connect(client, &conn_opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start connect, return code %d\n", rc);
-    exit(-1);	
+    exit(-1);
 	}
 
   while	(!subscribed)
@@ -328,7 +335,7 @@ int main(int argc, char** argv)
 	if ((rc = MQTTAsync_disconnect(client, &disc_opts)) != MQTTASYNC_SUCCESS)
 	{
 		printf("Failed to start disconnect, return code %d\n", rc);
-    exit(-1);	
+    exit(-1);
 	}
 
   while	(!disconnected)

@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *    http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -52,7 +52,11 @@ typedef struct
 
 typedef struct
 {
+#ifdef __VMS
+	unsigned long long id;
+#else
 	unsigned long id;
+#endif
 	int maxdepth;
 	int current_depth;
 	stackEntry callstack[MAX_STACK_DEPTH];
@@ -80,7 +84,11 @@ int setStack(int create)
 	cur_thread = NULL;
 	for (i = 0; i < MAX_THREADS && i < thread_count; ++i)
 	{
+#ifdef __VMS
+		if (threads[i].id == (unsigned long long) curid)
+#else
 		if (threads[i].id == curid)
+#endif
 		{
 			cur_thread = &threads[i];
 			break;
@@ -90,7 +98,11 @@ int setStack(int create)
 	if (cur_thread == NULL && create && thread_count < MAX_THREADS)
 	{
 		cur_thread = &threads[thread_count];
+#ifdef __VMS
+		cur_thread->id = (unsigned long long) curid;
+#else
 		cur_thread->id = curid;
+#endif
 		cur_thread->maxdepth = 0;
 		cur_thread->current_depth = 0;
 		++thread_count;
@@ -149,15 +161,22 @@ void StackTrace_printStack(char* dest)
 		if (cur_thread->id > 0)
 		{
 			int i = cur_thread->current_depth - 1;
-
+#ifdef __VMS
+			fprintf(file, "=========== Start of stack trace for thread %llu ==========\n", cur_thread->id);
+#else
 			fprintf(file, "=========== Start of stack trace for thread %lu ==========\n", cur_thread->id);
+#endif
 			if (i >= 0)
 			{
 				fprintf(file, "%s (%d)\n", cur_thread->callstack[i].name, cur_thread->callstack[i].line);
 				while (--i >= 0)
 					fprintf(file, "   at %s (%d)\n", cur_thread->callstack[i].name, cur_thread->callstack[i].line);
 			}
+#ifdef __VMS
+			fprintf(file, "=========== End of stack trace for thread %llu ==========\n\n", cur_thread->id);
+#else
 			fprintf(file, "=========== End of stack trace for thread %lu ==========\n\n", cur_thread->id);
+#endif
 		}
 	}
 	if (file != stdout && file != stderr && file != NULL)

@@ -1,0 +1,5 @@
+! SSL libraries (assumes we're using http://www.polarhome.com/openssl)
+!
+ssllib:ssl_libssl32.olb/lib
+ssllib:ssl_libcrypto32.olb/lib
+!

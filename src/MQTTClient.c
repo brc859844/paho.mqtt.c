@@ -3,17 +3,17 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *    http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
  *    Ian Craggs - initial API and implementation and/or initial documentation
  *    Ian Craggs - bug 384016 - segv setting will message
- *    Ian Craggs - bug 384053 - v1.0.0.7 - stop MQTTClient_receive on socket error 
+ *    Ian Craggs - bug 384053 - v1.0.0.7 - stop MQTTClient_receive on socket error
  *    Ian Craggs, Allan Stockdill-Mander - add ability to connect with SSL
  *******************************************************************************/
 
@@ -35,7 +35,14 @@
 #include "Heap.h"
 
 #if defined(OPENSSL)
+#ifdef __VMS
+#pragma names save
+#pragma names uppercase
+#endif
 #include <openssl/ssl.h>
+#ifdef __VMS
+#pragma names restore
+#endif
 #endif
 
 #define URI_TCP "tcp://"
@@ -189,6 +196,17 @@ long MQTTClient_elapsed(struct timespec start)
 	return (res.tv_sec)*1000L + (res.tv_nsec)/1000000L;
 }
 #else
+#ifdef __VMS
+static void timersub(struct timeval *a, struct timeval *b, struct timeval *res)
+{
+    res->tv_sec = a->tv_sec - b->tv_sec;
+    res->tv_usec = a->tv_usec - b->tv_usec;
+    if (res->tv_usec < 0) {
+      --res->tv_sec;
+      res->tv_usec += 1000000;
+    }
+}
+#endif
 long MQTTClient_elapsed(struct timeval start)
 {
 	struct timeval now, res;
@@ -528,7 +546,7 @@ thread_return_type WINAPI MQTTClient_run(void* n)
 			}
 #if defined(OPENSSL)
 			else if (m->c->connect_state == 2 && !Thread_check_sem(m->connect_sem))
-			{			
+			{
 				rc = SSLSocket_connect(m->c->net.ssl, m->c->net.socket);
 				if (rc == 1)
 				{
@@ -737,7 +755,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
 			goto exit;
 		}
 	}
-	
+
 #if defined(OPENSSL)
 	if (options->struct_version != 0 && options->ssl) /* check validity of SSL options structure */
 	{
@@ -781,7 +799,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
 		m->c->will->retained = options->will->retained;
 		m->c->will->topic = options->will->topicName;
 	}
-	
+
 #if defined(OPENSSL)
 	if (options->struct_version != 0 && options->ssl)
 		m->c->sslopts = options->ssl;
@@ -816,7 +834,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
 			rc = SOCKET_ERROR;
 			goto exit;
 		}
-		
+
 #if defined(OPENSSL)
 		if (m->ssl)
 		{
@@ -855,7 +873,7 @@ int MQTTClient_connect(MQTTClient handle, MQTTClient_connectOptions* options)
 		}
 #endif
 	}
-	
+
 #if defined(OPENSSL)
 	if (m->c->connect_state == 2) /* SSL connect sent - wait for completion */
 	{
@@ -1048,7 +1066,7 @@ int MQTTClient_subscribeMany(MQTTClient handle, int count, char** topic, int* qo
 			rc = MQTTCLIENT_BAD_UTF8_STRING;
 			goto exit;
 		}
-		
+
 		if(qos[i] < 0 || qos[i] > 2)
 		{
 			rc = MQTTCLIENT_BAD_QOS;
@@ -1520,7 +1538,7 @@ int MQTTClient_receive(MQTTClient handle, char** topicName, int* topicLen, MQTTC
 	{
 		int sock = 0;
 		MQTTClient_cycle(&sock, (timeout > elapsed) ? timeout - elapsed : 0L, &rc);
-		
+
 		if (rc == SOCKET_ERROR)
 		{
 			if (ListFindItem(handles, &sock, clientSockCompare) && 	/* find client corresponding to socket */
@@ -1728,21 +1746,21 @@ void MQTTProtocol_checkPendingWrites()
 }
 
 
-void MQTTClient_writeComplete(int socket)				
+void MQTTClient_writeComplete(int socket)
 {
 	ListElement* found = NULL;
-	
+
 	FUNC_ENTRY;
 	/* a partial write is now complete for a socket - this will be on a publish*/
-	
+
 	MQTTProtocol_checkPendingWrites();
-	
+
 	/* find the client using this socket */
 	if ((found = ListFindItem(handles, &socket, clientSockCompare)) != NULL)
 	{
 		MQTTClients* m = (MQTTClients*)(found->content);
-		
-		time(&(m->c->net.lastContact));			
+
+		time(&(m->c->net.lastContact));
 	}
 	FUNC_EXIT;
 }

@@ -1,0 +1,45 @@
+To build on OpenVMS...
+
+Requirements:
+
+1. OpenVMS 8.4 (Alpha or Integrity)
+
+2. HP C V7.3-018 on OpenVMS IA64 V8.4 (or higher)
+
+3. The Paho C library requires a recent version of OpenSSL (if you want to
+   build the SSL-enabled libraries). The latest realease (at the time of
+   writing) provided by HP is not too old, and instead it is necessary to
+   use http://www.polarhome.com/openssl/files/openssl-101c.zip (or later).
+
+
+Building the libraries:
+
+1. Ensure that OpenSSL is installed (see previous notes) and that the
+   necessary logical names have been defined:
+
+   $ @[.openssl-101c.vms]OPENSSL_STARTUP.COM
+
+2. Set default to the [.build] sub-directory and run @build. This will create
+   in [.build.VMS-IA64] (or [.build-VMS-AXP] for OpenVMS Alpha) object
+   libraries and shareable images for each of the build types.
+
+   The build procedure is very simple ("crude" would be a better description).
+
+   If you don't want to build the SSL versions of the libraries just modify
+   the build procedure to exit before this point.
+
+3. Build the samples in [.src.samples]
+
+   $ set default [.src.samples]
+   $ @build
+
+   Note that it may be necessary to change the broker address specified in
+   each of the samples to suite you environment.
+
+   The samples have been tested using the RabbitMQ MQTT plugin, but they should
+   obviously also work with other MQTT broker implementations.
+
+Enjoy!
+
+BRC 05-May-2013
+

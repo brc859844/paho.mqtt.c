@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *    http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -31,7 +31,9 @@
 #include <string.h>
 
 #if !defined(WIN32)
+#ifndef __VMS
 #include <syslog.h>
+#endif
 #include <sys/stat.h>
 #define GETTIMEOFDAY 1
 #else
@@ -169,11 +171,11 @@ int Log_initialize(Log_nameValue* info)
 	if (stat("/proc/version", &buf) != -1)
 	{
 		FILE* vfile;
-		
+
 		if ((vfile = fopen("/proc/version", "r")) != NULL)
 		{
 			int len;
-			
+
 			strcpy(msg_buf, "/proc/version: ");
 			len = strlen(msg_buf);
 			if (fgets(&msg_buf[len], sizeof(msg_buf) - len, vfile))
@@ -183,7 +185,7 @@ int Log_initialize(Log_nameValue* info)
 	}
 #endif
 	Log_output(TRACE_MINIMUM, "=========================================================");
-		
+
 	return rc;
 }
 
@@ -321,9 +323,9 @@ static void Log_output(int log_level, char* msg)
 		fprintf(trace_destination, "%s\n", msg);
 
 		if (trace_destination != stdout && ++lines_written >= max_lines_per_file)
-		{	
+		{
 
-			fclose(trace_destination);		
+			fclose(trace_destination);
 			_unlink(trace_destination_backup_name); /* remove any old backup trace file */
 			rename(trace_destination_name, trace_destination_backup_name); /* rename recently closed to backup */
 			trace_destination = fopen(trace_destination_name, "w"); /* open new trace file */
@@ -335,7 +337,7 @@ static void Log_output(int log_level, char* msg)
 			fflush(trace_destination);
 		Thread_unlock_mutex(log_mutex);
 	}
-		
+
 	if (trace_callback)
 		(*trace_callback)(log_level, msg);
 }
@@ -346,10 +348,10 @@ static void Log_posttrace(int log_level, traceEntry* cur_entry)
 	if (((trace_output_level == -1) ? log_level >= trace_settings.trace_level : log_level >= trace_output_level))
 	{
 		char* msg = NULL;
-		
+
 		if (trace_destination || trace_callback)
 			msg = &Log_formatTraceEntry(cur_entry)[7];
-		
+
 		Log_output(log_level, msg);
 	}
 }

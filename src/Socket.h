@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *    http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -35,9 +35,13 @@
 #else
 #define INVALID_SOCKET SOCKET_ERROR
 #include <sys/socket.h>
+#ifndef __VMS
 #include <sys/param.h>
+#endif
 #include <sys/time.h>
+#ifndef __VMS		/* select() is defined in time.h */
 #include <sys/select.h>
+#endif
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <arpa/inet.h>
@@ -46,6 +50,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef __VMS
+#define socklen_t unsigned
+#endif
 #endif
 
 /** socket operation completed successfully */

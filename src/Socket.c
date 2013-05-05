@@ -3,11 +3,11 @@
  *
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
- * and Eclipse Distribution License v1.0 which accompany this distribution. 
+ * and Eclipse Distribution License v1.0 which accompany this distribution.
  *
- * The Eclipse Public License is available at 
+ * The Eclipse Public License is available at
  *    http://www.eclipse.org/legal/epl-v10.html
- * and the Eclipse Distribution License is available at 
+ * and the Eclipse Distribution License is available at
  *   http://www.eclipse.org/org/documents/edl-v10.php.
  *
  * Contributors:
@@ -42,6 +42,10 @@
 int Socket_close_only(int socket);
 int Socket_continueWrites(fd_set* pwset);
 
+#ifdef __VMS
+#include <ioctl.h>
+#endif
+
 #if defined(WIN32)
 #define iov_len len
 #define iov_base buf
@@ -61,7 +65,7 @@ static fd_set wset;
 int Socket_setnonblocking(int sock)
 {
 	int rc;
-#if defined(WIN32)
+#if defined(WIN32) || defined(__VMS)
 	u_long flag = 1L;
 
 	FUNC_ENTRY;
@@ -487,7 +491,7 @@ exit:
 /**
  *  Add a socket to the pending write list, so that it is checked for writing in select.  This is used
  *  in connect processing when the TCP connect is incomplete, as we need to check the socket for both
- *  ready to read and write states. 
+ *  ready to read and write states.
  *  @param socket the socket to add
  */
 void Socket_addPendingWrite(int socket)
@@ -707,13 +711,13 @@ int Socket_continueWrite(int socket)
 
 	FUNC_ENTRY;
 	pw = SocketBuffer_getWrite(socket);
-	
+
 #if defined(OPENSSL)
 	if (pw->ssl)
 	{
 		rc = SSLSocket_continueWrite(pw);
 		goto exit;
-	} 	
+	}
 #endif
 
 	for (i = 0; i < pw->count; ++i)
@@ -744,7 +748,7 @@ int Socket_continueWrite(int socket)
 			free(pw->iovecs[1].iov_base);
 			if (pw->count == 5)
 				free(pw->iovecs[3].iov_base);
-			Log(TRACE_MIN, -1, "ContinueWrite: partial write now complete for socket %d", socket);		
+			Log(TRACE_MIN, -1, "ContinueWrite: partial write now complete for socket %d", socket);
 		}
 		else
 			Log(TRACE_MIN, -1, "ContinueWrite wrote +%lu bytes on socket %d", bytes, socket);
@@ -782,7 +786,7 @@ int Socket_continueWrites(fd_set* pwset)
 				ListNextElement(s.write_pending, &curpending);
 			}
 			curpending = s.write_pending->current;
-						
+
 			if (writecomplete)
 				(*writecomplete)(socket);
 		}
